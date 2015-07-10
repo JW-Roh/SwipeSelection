@@ -171,6 +171,12 @@
 @end
 
 
+@interface TIKeyboardState : NSObject
+@property(copy, nonatomic) NSString *searchStringForMarkedText;
+@property(copy, nonatomic) NSString *inputForMarkedText;
+@end
+
+
 @interface UIKeyboardImpl : UIView
 +(UIKeyboardImpl*)sharedInstance;
 +(UIKeyboardImpl*)activeInstance;
@@ -186,6 +192,13 @@
 -(BOOL)handwritingPlane;
 
 -(void)updateForChangedSelection;
+
+-(void)setMarkedText:(id)arg1 selectedRange:(NSRange)arg2 inputString:(id)arg3 searchString:(id)arg4;
+-(id)searchStringForMarkedText;
+-(id)markedText;
+-(BOOL)hasEditableMarkedText;
+-(BOOL)hasMarkedText;
+-(void)generateCandidates;
 
 // SwipeSelection
 -(void)_KHKeyboardGestureDidPan:(UIPanGestureRecognizer*)gesture;
@@ -225,8 +238,12 @@
 
 
 // Safari webview
+@interface UIWKAutocorrectionContext : NSObject
+@property(nonatomic) NSRange rangeInMarkedText;
+@end
 @interface WKContentView : UIView
 -(void)moveByOffset:(NSInteger)offset;
+-(void)requestAutocorrectionContextWithCompletionHandler:(void (^)(UIWKAutocorrectionContext *autocorrectionContext))completionHandler;
 @end
 
 
@@ -711,6 +728,17 @@ Class AKFlickGestureRecognizer(){
 				xOffset += (positive ? -(offset * xMinimum) : (offset * xMinimum));
 			}
 			[self SS_revealSelection:(UIView*)privateInputDelegate];
+
+			// update Candidate strings
+			if (!extendRange) {
+				[(WKContentView *)privateInputDelegate requestAutocorrectionContextWithCompletionHandler:^(UIWKAutocorrectionContext *autocorrectionContext) {
+					if ([keyboardImpl hasEditableMarkedText]) {
+						TIKeyboardState *m_keyboardState = MSHookIvar<TIKeyboardState *>(keyboardImpl, "m_keyboardState");
+						[keyboardImpl setMarkedText:[keyboardImpl markedText] selectedRange:autocorrectionContext.rangeInMarkedText inputString:[m_keyboardState inputForMarkedText] searchString:[keyboardImpl searchStringForMarkedText]];
+						[keyboardImpl generateCandidates];
+					}
+				}];
+			}
 		}
 		
 		
@@ -720,6 +748,19 @@ Class AKFlickGestureRecognizer(){
 		if (textRange && (oldPrevious.x != previousPosition.x || oldPrevious.y != previousPosition.y)) {
 			[privateInputDelegate setSelectedTextRange:textRange];
 			[self SS_revealSelection:(UIView*)privateInputDelegate];
+			
+			// update Candidate strings
+			// iOS 7 only
+			if (!extendRange && [keyboardImpl respondsToSelector:@selector(setMarkedText:selectedRange:inputString:searchString:)]) {
+				UITextPosition *beginning = privateInputDelegate.beginningOfDocument;
+				NSUInteger rangeStartPosition = [privateInputDelegate offsetFromPosition:beginning toPosition:textRange.start];
+				NSUInteger startPosition = [privateInputDelegate offsetFromPosition:beginning toPosition:privateInputDelegate.markedTextRange.start];
+				if ([keyboardImpl hasEditableMarkedText]) {
+					TIKeyboardState *m_keyboardState = MSHookIvar<TIKeyboardState *>(keyboardImpl, "m_keyboardState");
+					[keyboardImpl setMarkedText:[keyboardImpl markedText] selectedRange:NSMakeRange(rangeStartPosition-startPosition, 0) inputString:[m_keyboardState inputForMarkedText] searchString:[keyboardImpl searchStringForMarkedText]];
+					[keyboardImpl generateCandidates];
+				}
+			}
 		}
 		
 		realPreviousPosition = position;
