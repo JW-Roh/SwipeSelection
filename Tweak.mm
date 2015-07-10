@@ -246,6 +246,13 @@
 -(void)requestAutocorrectionContextWithCompletionHandler:(void (^)(UIWKAutocorrectionContext *autocorrectionContext))completionHandler;
 @end
 
+// iOS 7
+@interface UnifiedField : UITextField
+-(id)_topHit;
+-(void)_promoteTopHitCompletion;
+-(NSUInteger)_unifiedFieldInputType;   // if topHit is enabled, return 1, else return 2
+@end
+
 
 
 
@@ -446,6 +453,13 @@ Class AKFlickGestureRecognizer(){
 		cancelled = YES; // Try disabling it
 	}
 	
+	if ([privateInputDelegate respondsToSelector:@selector(_topHit)]) {
+		UnifiedField *uf = (UnifiedField *)privateInputDelegate;
+		if ([uf _topHit]) {
+			[uf _promoteTopHitCompletion];
+		}
+	}
+	
 	
 	
 	
@@ -501,6 +515,8 @@ Class AKFlickGestureRecognizer(){
 		touchesCount = 0;
 		touchesWhenShiting = 0;
 		gesture.cancelsTouchesInView = NO;
+		
+		[startingtextRange release], startingtextRange = nil;
 	}
 	else if (longPress || handWriting || !privateInputDelegate || isMoreKey || cancelled || (tenKeyboard && !isTenKeyFunctionKey)) {
 		return;
