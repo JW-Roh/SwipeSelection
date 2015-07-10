@@ -242,6 +242,7 @@
 @property(nonatomic) NSRange rangeInMarkedText;
 @end
 @interface WKContentView : UIView
+-(void)executeEditCommandWithCallback:(NSString *)commandName;
 -(void)moveByOffset:(NSInteger)offset;
 -(void)requestAutocorrectionContextWithCompletionHandler:(void (^)(UIWKAutocorrectionContext *autocorrectionContext))completionHandler;
 @end
@@ -738,7 +739,12 @@ Class AKFlickGestureRecognizer(){
 				int offset = (ABS(xOffset) / xMinimum);
 				
 				for (int i = 0; i < offset; i++) {
-					[(WKContentView*)privateInputDelegate moveByOffset:(positive ? 1 : -1)];
+					if (!positive) {
+						[(WKContentView *)privateInputDelegate executeEditCommandWithCallback:(extendRange ? @"moveLeftAndModifySelection" : @"moveLeft")];
+					}
+					else {
+						[(WKContentView *)privateInputDelegate executeEditCommandWithCallback:(extendRange ? @"moveRightAndModifySelection" : @"moveRight")];
+					}
 				}
 				
 				xOffset += (positive ? -(offset * xMinimum) : (offset * xMinimum));
