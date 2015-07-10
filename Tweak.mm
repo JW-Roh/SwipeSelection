@@ -152,6 +152,7 @@
 
 @interface UIKeyboardLayout : UIView
 -(UIKBKey*)keyHitTest:(CGPoint)point;
+-(NSString *)keyboardName;
 @end
 
 @interface UIKeyboardLayoutStar : UIKeyboardLayout
@@ -163,6 +164,8 @@
 
 -(BOOL)SS_shouldSelect;
 -(BOOL)SS_disableSwipes;
+-(BOOL)SS_enableSwipesForTenKey;
+-(BOOL)SS_isTenKey;
 -(BOOL)isShiftKeyBeingHeld;
 -(void)deleteAction;
 @end
@@ -342,6 +345,8 @@ Class AKFlickGestureRecognizer(){
 	static BOOL isMoreKey = NO;
 	static int touchesWhenShiting = 0;
 	static BOOL cancelled = NO;
+	static BOOL tenKeyboard = NO;
+	static BOOL isTenKeyFunctionKey = NO;
 
 	int touchesCount = [gesture numberOfTouches];
 
@@ -363,6 +368,14 @@ Class AKFlickGestureRecognizer(){
 	// Check more key, unless it's already ues
 	if ([currentLayout respondsToSelector:@selector(SS_disableSwipes)] && !isMoreKey) {
 		isMoreKey = [currentLayout SS_disableSwipes];
+	}
+	
+	// Check function keys in 10Key Keyboard
+	if ([currentLayout respondsToSelector:@selector(SS_isTenKey)]) {
+		tenKeyboard = [currentLayout SS_isTenKey];
+	}
+	if (tenKeyboard && [currentLayout respondsToSelector:@selector(SS_enableSwipesForTenKey)] && !isTenKeyFunctionKey) {
+		isTenKeyFunctionKey = [currentLayout SS_enableSwipesForTenKey];
 	}
 	
 	// Hand writing recognition
@@ -466,12 +479,13 @@ Class AKFlickGestureRecognizer(){
 		handWriting = NO;
 		haveCheckedHand = NO;
 		cancelled = NO;
+		isTenKeyFunctionKey = NO;
 
 		touchesCount = 0;
 		touchesWhenShiting = 0;
 		gesture.cancelsTouchesInView = NO;
 	}
-	else if (longPress || handWriting || !privateInputDelegate || isMoreKey || cancelled) {
+	else if (longPress || handWriting || !privateInputDelegate || isMoreKey || cancelled || (tenKeyboard && !isTenKeyFunctionKey)) {
 		return;
 	}
 	else if (gesture.state == UIGestureRecognizerStateBegan) {
@@ -752,6 +766,8 @@ static BOOL shiftByOtherKey = NO;
 static BOOL isLongPressed = NO;
 static BOOL isDeleteKey = NO;
 static BOOL isMoreKey = NO;
+static BOOL tenKeyboard = NO;
+static BOOL isTenKeyFunctionKey = NO;
 
 
 %hook UIKeyboardLayoutStar
@@ -779,6 +795,28 @@ static BOOL isMoreKey = NO;
 	}
 	else {
 		isMoreKey = NO;
+	}
+	
+	
+	// function keys in 10Key keyboard
+	if ([key isEqualToString:@"korean10key-plane"] ||
+		[key isEqualToString:@"alphabet-korean10key-plane"] ||
+		[key isEqualToString:@"alphabet-plane"] ||
+		[key isEqualToString:@"symbolnumber-plane"] ||
+		[key isEqualToString:@"delete"] ||
+		[key isEqualToString:@"dismiss"] ||
+		[key isEqualToString:@"international"] ||
+		[key isEqualToString:@"kana-plane"] ||
+		[key isEqualToString:@"alphabet-small-letter-plane"] ||
+		[key isEqualToString:@"symbolnumber-plane-split"] ||
+		[key isEqualToString:@"alphabet-plane-split"] ||
+		[key isEqualToString:@"kana-plane-split"] ||
+		[key isEqualToString:@" "] ||
+		[key isEqualToString:@"\n"]) {
+		isTenKeyFunctionKey = [self SS_isTenKey];
+	}
+	else {
+		isTenKeyFunctionKey = NO;
 	}
 	
 	
@@ -817,6 +855,7 @@ static BOOL isMoreKey = NO;
 	shiftByOtherKey = NO;
 	isLongPressed = NO;
 	isMoreKey = NO;
+	isTenKeyFunctionKey = NO;
 }
 
 /*==============touchesEnded================*/
@@ -847,6 +886,7 @@ static BOOL isMoreKey = NO;
 	shiftByOtherKey = NO;
 	isLongPressed = NO;
 	isMoreKey = NO;
+	isTenKeyFunctionKey = NO;
 }
 
 
@@ -869,6 +909,29 @@ static BOOL isMoreKey = NO;
 %new
 -(BOOL)SS_disableSwipes{
 	return isMoreKey;
+}
+
+
+%new
+-(BOOL)SS_enableSwipesForTenKey{
+	return isTenKeyFunctionKey;
+}
+
+%new
+-(BOOL)SS_isTenKey{
+	return tenKeyboard;
+}
+
+- (void)updateGlobeKeyDisplayString {
+	%orig;
+	
+	NSString *keyboardName = [self keyboardName];
+	if ([keyboardName rangeOfString:@"-Kana"].location != NSNotFound)
+		tenKeyboard = YES;
+	else if ([keyboardName rangeOfString:@"-Korean10Key"].location != NSNotFound)
+		tenKeyboard = YES;
+	else
+		tenKeyboard = NO;
 }
 %end
 
