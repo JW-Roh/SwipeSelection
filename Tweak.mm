@@ -710,7 +710,7 @@ Class AKFlickGestureRecognizer(){
 		}
 
 		// Get a new text range
-		UITextRange *textRange = startingtextRange = nil;
+		UITextRange *textRange = nil;
 		if ([privateInputDelegate respondsToSelector:@selector(textRangeFromPosition:toPosition:)]) {
 			textRange = [privateInputDelegate textRangeFromPosition:pivotPoint toPosition:_position];
 		}
