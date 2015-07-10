@@ -1,9 +1,23 @@
-Package: com.iky1e.swipeselection
-Name: SwipeSelection
+Package: me.devbug.swipeselection
+Name: SwipeSelection - deVbug
 Depends: mobilesubstrate
 Version: 1.5
 Architecture: iphoneos-arm
-Description: Swipe along the keyboard to move the cursor and select text.
-Maintainer: Kyle Howells
-Author: Kyle Howells
+Description: Swipe along the keyboard to move the cursor and select text
+ SwipeSelection
+ editted by deVbug
+ 
+ This is not official version!
+ 
+ Swipe along the keyboard to move the cursor and select text.
+ 
+ Edited by deVbug
+ fixed Japanese candidate string issue
+ added Korean/Japanese 10Key keyboard support
+ fixed crash issue on iOS 8 Safari
+Maintainer: deVbug <devbug@debug.me>
+Author: deVbug <devbug@devbug.me>
 Section: Tweaks
+Conflicts: com.iky1e.swipeselection, com.pw5a29.swipeselection
+Replaces: com.iky1e.swipeselection, com.pw5a29.swipeselection
+Depiction: http://slak.kr/iphone/cydia/swipeselection-edited/
