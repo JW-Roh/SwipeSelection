@@ -936,7 +936,7 @@ static BOOL isTenKeyFunctionKey = NO;
 	
 	
 	// Delete key
-	if ([key isEqualToString:@"delete"] && !isLongPressed) {
+	if ([key isEqualToString:@"delete"] && !isLongPressed && (!tenKeyboard || (tenKeyboard && isTenKeyFunctionKey))) {
 		UIKeyboardImpl *kb = [UIKeyboardImpl activeInstance];
 		if ([kb respondsToSelector:@selector(handleDelete)]) {
 			[kb handleDelete];
